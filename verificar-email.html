@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Email - AxFiiS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            font-weight: bold;
+        }
+
+        h1 {
+            color: #1a1a1a;
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+
+        .status {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .status.loading {
+            background: #f0f4ff;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 2px solid #28a745;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 2px solid #dc3545;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .icon {
+            font-size: 64px;
+            margin: 20px 0;
+        }
+
+        .icon.success {
+            color: #28a745;
+        }
+
+        .icon.error {
+            color: #dc3545;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .error-details {
+            margin-top: 15px;
+            padding: 15px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #856404;
+            text-align: left;
+        }
+
+        .config-note {
+            margin-top: 30px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #0c5460;
+            text-align: left;
+        }
+
+        .config-note strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #004085;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">A</div>
+        <h1>Verificar Email</h1>
+        <p class="subtitle">Verificando tu dirección de correo electrónico...</p>
+
+        <div id="status-container">
+            <!-- Estado inicial: Cargando -->
+            <div class="status loading" id="loading-state">
+                <div class="spinner"></div>
+                <p>Verificando tu email, por favor espera...</p>
+            </div>
+
+            <!-- Estado de éxito -->
+            <div class="status success" id="success-state" style="display: none;">
+                <div class="icon success">✓</div>
+                <h2 style="margin-bottom: 10px; color: #155724;">¡Email Verificado!</h2>
+                <p id="success-message"></p>
+                <a href="#" class="button" id="continue-button">Continuar</a>
+            </div>
+
+            <!-- Estado de error -->
+            <div class="status error" id="error-state" style="display: none;">
+                <div class="icon error">✗</div>
+                <h2 style="margin-bottom: 10px; color: #721c24;">Error al Verificar</h2>
+                <p id="error-message"></p>
+                <div id="error-details" class="error-details" style="display: none;"></div>
+                <button class="button" onclick="window.location.reload()" style="background: #dc3545; margin-top: 15px;">
+                    Reintentar
+                </button>
+            </div>
+        </div>
+
+        <div class="config-note" id="config-note" style="display: none;">
+            <strong>⚠️ Configuración requerida:</strong>
+            <p>Por favor, configura la variable <code>BACKEND_URL</code> en el código JavaScript de esta página con la URL de tu backend.</p>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ CONFIGURACIÓN: Cambia esta URL por la de tu backend
+        const BACKEND_URL = 'https://unrancored-unquarreling-lavera.ngrok-free.dev'; // <-- CAMBIA ESTA URL
+        
+        // Obtener token de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        // Función para mostrar error de configuración
+        function showConfigError() {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('config-note').style.display = 'block';
+            document.getElementById('error-state').style.display = 'block';
+            document.getElementById('error-message').textContent = 'La URL del backend no está configurada correctamente.';
+        }
+
+        // Verificar si hay token
+        if (!token) {
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('error-state').style.display = 'block';
+            document.getElementById('error-message').textContent = 'No se encontró el token de verificación en la URL.';
+            document.getElementById('error-details').textContent = 'El link de verificación debe incluir un parámetro "token". Por favor, verifica que el link del correo esté completo.';
+            document.getElementById('error-details').style.display = 'block';
+        } else if (BACKEND_URL.includes('tu-backend.com') || BACKEND_URL === '') {
+            // Mostrar error si no está configurado
+            showConfigError();
+        } else {
+            // Realizar verificación
+            verifyEmail(token);
+        }
+
+        async function verifyEmail(token) {
+            try {
+                const apiUrl = `${BACKEND_URL}/api/v1/auth/verificar-email?token=${encodeURIComponent(token)}`;
+                
+                console.log('Llamando a:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                const data = await response.json();
+
+                // Ocultar estado de carga
+                document.getElementById('loading-state').style.display = 'none';
+
+                if (response.ok && data.success) {
+                    // Éxito
+                    document.getElementById('success-state').style.display = 'block';
+                    document.getElementById('success-message').textContent = data.message || 'Tu email ha sido verificado exitosamente.';
+                    
+                    // Configurar botón de continuar
+                    const continueButton = document.getElementById('continue-button');
+                    // Puedes cambiar esta URL por la de tu frontend/login
+                    continueButton.href = '/login'; // O la URL que prefieras
+                } else {
+                    // Error
+                    document.getElementById('error-state').style.display = 'block';
+                    document.getElementById('error-message').textContent = data.message || data.detail || 'Ocurrió un error al verificar tu email.';
+                    
+                    if (data.detail) {
+                        document.getElementById('error-details').textContent = data.detail;
+                        document.getElementById('error-details').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                
+                // Ocultar estado de carga
+                document.getElementById('loading-state').style.display = 'none';
+                
+                // Mostrar error
+                document.getElementById('error-state').style.display = 'block';
+                document.getElementById('error-message').textContent = 'Error de conexión. Por favor, verifica tu conexión a internet e intenta nuevamente.';
+                document.getElementById('error-details').textContent = `Error técnico: ${error.message}`;
+                document.getElementById('error-details').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
+
