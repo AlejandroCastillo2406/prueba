@@ -218,13 +218,15 @@
 
         <div class="config-note" id="config-note" style="display: none;">
             <strong>⚠️ Configuración requerida:</strong>
-            <p>Por favor, configura la variable <code>BACKEND_URL</code> en el código JavaScript de esta página con la URL de tu backend.</p>
+            <p>Por favor, configura la variable <code>BACKEND_URL</code> en el código JavaScript (línea ~200) con la URL de tu <strong>BACKEND</strong> (no del frontend).</p>
+            <p style="margin-top: 8px; font-size: 12px;">Ejemplo: <code>const BACKEND_URL = 'https://api.tudominio.com';</code></p>
         </div>
     </div>
 
     <script>
-        // ⚠️ CONFIGURACIÓN: Cambia esta URL por la de tu backend
-        const BACKEND_URL = 'https://unrancored-unquarreling-lavera.ngrok-free.dev'; // <-- CAMBIA ESTA URL
+        // ⚠️ CONFIGURACIÓN: URL del BACKEND (no del frontend)
+        // Esta es la URL de tu API/backend, NO la del frontend
+        const BACKEND_URL = 'https://unrancored-unquarreling-lavera.ngrok-free.dev'; // <-- URL de tu BACKEND
         
         // Obtener token de la URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -258,15 +260,80 @@
                 const apiUrl = `${BACKEND_URL}/api/v1/auth/verificar-email?token=${encodeURIComponent(token)}`;
                 
                 console.log('Llamando a:', apiUrl);
+                console.log('Backend URL configurado:', BACKEND_URL);
                 
                 const response = await fetch(apiUrl, {
                     method: 'GET',
+                    mode: 'cors',  // Asegurar que CORS esté habilitado
                     headers: {
                         'Content-Type': 'application/json',
-                    }
+                        'ngrok-skip-browser-warning': 'true',  // Necesario para ngrok free tier
+                        'Accept': 'application/json'  // Especificar que esperamos JSON
+                    },
+                    credentials: 'omit'  // No enviar cookies
                 });
 
-                const data = await response.json();
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+
+                // Obtener el texto de la respuesta primero para verificar si es HTML
+                const responseText = await response.text();
+                
+                console.log('Response text (primeros 500 chars):', responseText.substring(0, 500));
+                
+                // Función para mostrar error de ngrok
+                function showNgrokError() {
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('error-state').style.display = 'block';
+                    document.getElementById('error-message').textContent = 'Ngrok está bloqueando la petición. Necesitas aceptar la advertencia de ngrok primero.';
+                    document.getElementById('error-details').innerHTML = `
+                        <strong>📋 Instrucciones para solucionar:</strong><br><br>
+                        1. <strong>Abre esta URL en una nueva pestaña:</strong><br>
+                        <a href="${BACKEND_URL}" target="_blank" style="color: #0066cc; word-break: break-all; text-decoration: underline;">${BACKEND_URL}</a><br><br>
+                        2. <strong>En la página de ngrok, haz clic en "Visit Site"</strong><br><br>
+                        3. <strong>Vuelve a esta página y haz clic en "Reintentar"</strong><br><br>
+                        <em>Nota: Esto solo necesitas hacerlo una vez. Después funcionará automáticamente.</em>
+                    `;
+                    document.getElementById('error-details').style.display = 'block';
+                }
+
+                // Verificar si ngrok devolvió HTML (página de advertencia)
+                const trimmedText = responseText.trim();
+                const lowerText = trimmedText.toLowerCase();
+                
+                if (trimmedText.startsWith('<!DOCTYPE') || 
+                    trimmedText.startsWith('<html') || 
+                    lowerText.includes('ngrok') ||
+                    lowerText.includes('visit site') ||
+                    lowerText.includes('browser warning')) {
+                    showNgrokError();
+                    return;
+                }
+
+                // Intentar parsear como JSON
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch (e) {
+                    console.error('Error parseando JSON:', e);
+                    console.error('Response text:', responseText.substring(0, 500));
+                    
+                    // Si el error es por HTML, mostrar instrucciones de ngrok
+                    if (e.message.includes("Unexpected token '<'") || 
+                        trimmedText.startsWith('<!DOCTYPE') || 
+                        trimmedText.startsWith('<html')) {
+                        showNgrokError();
+                        return;
+                    }
+                    
+                    // Otro tipo de error de parsing
+                    document.getElementById('loading-state').style.display = 'none';
+                    document.getElementById('error-state').style.display = 'block';
+                    document.getElementById('error-message').textContent = 'La respuesta del servidor no es válida.';
+                    document.getElementById('error-details').textContent = `Error: ${e.message}\n\nRespuesta recibida (primeros 500 caracteres):\n${responseText.substring(0, 500)}`;
+                    document.getElementById('error-details').style.display = 'block';
+                    return;
+                }
 
                 // Ocultar estado de carga
                 document.getElementById('loading-state').style.display = 'none';
@@ -306,5 +373,4 @@
     </script>
 </body>
 </html>
-
 
